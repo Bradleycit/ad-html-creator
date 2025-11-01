@@ -48,9 +48,9 @@
   <p style="margin-top:12px;font-size:11px;color:#666;">
     Affiliate link • As an Amazon Associate we earn from qualifying purchases
   </p>
-</div>```
+</div>
 
-
+```
 
 
 
