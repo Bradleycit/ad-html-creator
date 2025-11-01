@@ -68,7 +68,7 @@ Yes! 100% free for personal and commercial use.
 
 ---
 
-```
+---
 Compliance & Best Practices
 
 Includes required "As an Amazon Associate..." disclosure
@@ -76,7 +76,7 @@ Uses target="_blank" for external links
 ref=yourls parameter for tracking in YOURLS
 Fully compliant with Amazon Associates Program policies
 
-```
+---
 
 
 License
