@@ -49,3 +49,16 @@
     Affiliate link • As an Amazon Associate we earn from qualifying purchases
   </p>
 </div>
+
+
+
+
+
+License
+MIT License – Free to use, modify, and distribute.
+
+Built with love for affiliate marketers who hate broken previews.
+
+Star this repo if it saved you time!
+Found a bug? Open an issue
+Made by [Your Name] – Amazon Affiliate Tools
