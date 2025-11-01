@@ -86,4 +86,4 @@ Built with love for affiliate marketers who hate broken previews.
 
 Star this repo if it saved you time!
 Found a bug? Open an issue
-Made by [Your Name] – Amazon Affiliate Tools "testing"
+Made by [Your Name] – Amazon Affiliate Tools 
