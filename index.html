@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Amazon → Interstitial Ad Generator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body {font-family: Arial, sans-serif; background:#f9f9fb; margin:0; padding:20px;}
+  .container {max-width:800px; margin:auto; background:#fff; padding:30px; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.1);}
+  h1 {text-align:center; color:#1976d2; margin-bottom:10px;}
+  p.subtitle {text-align:center; color:#555; margin-bottom:25px;}
+  label {display:block; margin:15px 0 5px; font-weight:bold; color:#333;}
+  input, textarea, button {width:100%; padding:12px; margin:8px 0; border:1px solid #ddd; border-radius:6px; font-size:16px;}
+  input[type="url"], input[type="text"] {font-size:15px;}
+  textarea {height:120px; font-family:monospace; resize:vertical;}
+  button {background:#ff9900; color:#fff; font-weight:bold; cursor:pointer; transition:0.2s; border:none;}
+  button:hover {background:#e68a00;}
+  .output {background:#f0f8ff; padding:15px; border-left:4px solid #1976d2; margin-top:20px; white-space:pre-wrap; font-family:monospace; font-size:14px; position:relative;}
+  .copy-btn {position:absolute; top:10px; right:10px; background:#1976d2; color:#fff; padding:6px 12px; font-size:13px; border-radius:4px;}
+  .copy-btn:hover {background:#1565c0;}
+  .preview {margin-top:20px; padding:20px; background:#fff; border:1px dashed #ccc; border-radius:8px;}
+  .note {font-size:13px; color:#666; margin-top:20px; line-height:1.5;}
+  .note a {color:#1976d2;}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Amazon → Interstitial Ad Generator</h1>
+  <p class="subtitle">Paste product link + image → get beautiful HTML for YOURLS</p>
+
+  <label for="url">Amazon Product URL:</label>
+  <input type="url" id="url" placeholder="https://www.amazon.com/dp/B0FFPZRPX9">
+
+  <label for="image">Product Image URL (optional):</label>
+  <input type="url" id="image" placeholder="https://m.media-amazon.com/images/I/71j3Z3Z3Z3L._AC_SL1500_.jpg">
+
+  <label for="tag">Your Amazon Tag (optional):</label>
+  <input type="text" id="tag" placeholder="yourtag-20" value="fromdevtools-20">
+
+  <label for="title">Ad Title (optional):</label>
+  <input type="text" id="title" placeholder="e.g. Limited Time Deal!">
+
+  <label for="price">Sale Price (optional):</label>
+  <input type="text" id="price" placeholder="e.g. $199.99">
+
+  <label for="original">Original Price (optional):</label>
+  <input type="text" id="original" placeholder="e.g. $299.99">
+
+  <button onclick="generateAd()">Generate Ad Code</button>
+
+  <div id="output" class="output" style="display:none;">
+    <button class="copy-btn" onclick="copyCode()">Copy</button>
+    <strong>HTML Code (paste into YOURLS):</strong><br><br>
+    <code id="code"></code>
+  </div>
+
+  <div id="preview" class="preview" style="display:none;"></div>
+
+  <p class="note">
+    <strong>Tips:</strong><br>
+    • Use a direct image link (ends in <code>.jpg</code>, <code>.png</code>)<br>
+    • Amazon images: right-click product image → "Copy image address"<br>
+    • Add <code>&ref=yourls</code> to track clicks in Amazon Associates<br>
+    • Leave image blank to auto-fetch from Amazon
+  </p>
+</div>
+
+<script>
+async function generateAd() {
+  const url = document.getElementById('url').value.trim();
+  const customImg = document.getElementById('image').value.trim();
+  const tag = document.getElementById('tag').value.trim();
+  const title = document.getElementById('title').value.trim() || 'Limited Time Deal!';
+  const price = document.getElementById('price').value.trim();
+  const original = document.getElementById('original').value.trim();
+
+  if (!url) {
+    alert('Please enter an Amazon URL');
+    return;
+  }
+
+  // --- Extract ASIN ---
+  const asinMatch = url.match(/\/dp\/([A-Z0-9]{10})/) || url.match(/\/gp\/product\/([A-Z0-9]{10})/);
+  if (!asinMatch) {
+    alert('Could not find ASIN. Use a standard Amazon product link.');
+    return;
+  }
+  const asin = asinMatch[1];
+
+  // --- Final URL with tag & ref ---
+  let finalUrl = `https://www.amazon.com/dp/${asin}`;
+  const params = new URLSearchParams();
+  if (tag) params.append('tag', tag);
+  params.append('ref', 'yourls');
+  finalUrl += '?' + params.toString();
+
+  // --- Image: use custom if provided, else try to fetch ---
+  let imgSrc = customImg || '';
+  if (!imgSrc) {
+    try {
+      const proxy = 'https://api.allorigins.win/raw?url=';
+      const resp = await fetch(proxy + encodeURIComponent(`https://www.amazon.com/dp/${asin}`));
+      const html = await resp.text();
+      const imgMatch = html.match(/<img[^>]+id="landingImage"[^>]+data-a-dynamic-image="([^"]+)"/);
+      if (imgMatch) {
+        const json = JSON.parse(imgMatch[1]);
+        const keys = Object.keys(json).sort((a,b) => json[b][0] - json[a][0]); // largest first
+        imgSrc = keys[0];
+      }
+    } catch (e) {
+      imgSrc = `https://m.media-amazon.com/images/I/${asin}.jpg`; // fallback
+    }
+  }
+
+  // --- Price HTML ---
+  let priceHtml = '';
+  if (price || original) {
+    priceHtml = `<p style="margin:8px 0;color:#B12704;font-weight:bold;font-size:18px;">`;
+    if (original) priceHtml += `<del>${original}</del> `;
+    if (price) priceHtml += `${price}`;
+    priceHtml += `</p>`;
+  }
+
+  // --- Final Ad HTML ---
+  const html = `<div style="background:#fff;padding:25px;border-radius:15px;text-align:center;box-shadow:0 4px 15px rgba(0,0,0,0.1);max-width:100%;">
+    <img src="${imgSrc}" alt="Product" style="max-width:100%;height:auto;border-radius:10px;margin-bottom:15px;">
+    <h3 style="margin:8px 0;font-size:20px;color:#232f3e;">${title}</h3>
+    ${priceHtml}
+    <a href="${finalUrl}" target="_blank" 
+       style="background:#ff9900;color:#fff;text-decoration:none;padding:12px 28px;border-radius:50px;font-weight:bold;font-size:17px;display:inline-block;">
+       View Deal on Amazon
+    </a>
+    <p style="margin-top:12px;font-size:11px;color:#666;">
+        Affiliate link • As an Amazon Associate we earn from qualifying purchases
+    </p>
+</div>`.replace(/^\s+|\s+$/gm, '').replace(/\n/g, '');
+
+  // --- Show output ---
+  document.getElementById('code').textContent = html;
+  document.getElementById('output').style.display = 'block';
+  document.getElementById('preview').innerHTML = html;
+  document.getElementById('preview').style.display = 'block';
+}
+
+function copyCode() {
+  const code = document.getElementById('code').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    const old = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = old, 2000);
+  });
+}
+</script>
+
+</body>
+</html>
