@@ -53,7 +53,7 @@
 ```
 
 
-```
+---
 FAQ
 Why use a proxy (allorigins.win)?
 Amazon blocks direct cross-origin requests. The proxy fetches the page safely.
@@ -66,7 +66,7 @@ Or use manual image URL for guaranteed control
 Can I use this commercially?
 Yes! 100% free for personal and commercial use.
 
-```
+---
 
 ```
 Compliance & Best Practices
