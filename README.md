@@ -53,11 +53,12 @@
 ```
 
 
-```FAQ
+```
+FAQ
 Why use a proxy (allorigins.win)?
 Amazon blocks direct cross-origin requests. The proxy fetches the page safely.
 What if the image doesn't load?
-```
+
 
 Falls back to a clean placeholder: No Image
 Or use manual image URL for guaranteed control
@@ -65,6 +66,7 @@ Or use manual image URL for guaranteed control
 Can I use this commercially?
 Yes! 100% free for personal and commercial use.
 
+```
 
 License
 MIT License – Free to use, modify, and distribute.
