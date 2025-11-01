@@ -2,32 +2,34 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Amazon → Interstitial Ad Generator</title>
+<title>Amazon → Interstitial Ad + Live Preview</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-  body {font-family: Arial, sans-serif; background:#f9f9fb; margin:0; padding:20px;}
-  .container {max-width:800px; margin:auto; background:#fff; padding:30px; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.1);}
-  h1 {text-align:center; color:#1976d2; margin-bottom:10px;}
-  p.subtitle {text-align:center; color:#555; margin-bottom:25px;}
-  label {display:block; margin:15px 0 5px; font-weight:bold; color:#333;}
-  input, textarea, button {width:100%; padding:12px; margin:8px 0; border:1px solid #ddd; border-radius:6px; font-size:16px;}
-  input[type="url"], input[type="text"] {font-size:15px;}
-  textarea {height:120px; font-family:monospace; resize:vertical;}
-  button {background:#ff9900; color:#fff; font-weight:bold; cursor:pointer; transition:0.2s; border:none;}
-  button:hover {background:#e68a00;}
-  .output {background:#f0f8ff; padding:15px; border-left:4px solid #1976d2; margin-top:20px; white-space:pre-wrap; font-family:monospace; font-size:14px; position:relative;}
-  .copy-btn {position:absolute; top:10px; right:10px; background:#1976d2; color:#fff; padding:6px 12px; font-size:13px; border-radius:4px;}
-  .copy-btn:hover {background:#1565c0;}
-  .preview {margin-top:20px; padding:20px; background:#fff; border:1px dashed #ccc; border-radius:8px;}
-  .note {font-size:13px; color:#666; margin-top:20px; line-height:1.5;}
-  .note a {color:#1976d2;}
+  body {font-family:Arial,sans-serif;background:#f4f6f9;margin:0;padding:20px;}
+  .container{max-width:900px;margin:auto;background:#fff;padding:30px;border-radius:12px;box-shadow:0 6px 25px rgba(0,0,0,0.1);}
+  h1{text-align:center;color:#1976d2;margin-bottom:8px;}
+  p.subtitle{text-align:center;color:#555;margin-bottom:25px;}
+  label{display:block;margin:15px 0 5px;font-weight:bold;color:#333;}
+  input,button{width:100%;padding:12px;margin:8px 0;border:1px solid #ddd;border-radius:6px;font-size:16px;}
+  input[type="url"],input[type="text"]{font-size:15px;}
+  button{background:#ff9900;color:#fff;font-weight:bold;cursor:pointer;border:none;transition:.2s;}
+  button:hover{background:#e68a00;}
+  .output{background:#f0f8ff;padding:15px;border-left:4px solid #1976d2;margin-top:20px;position:relative;font-family:monospace;font-size:14px;white-space:pre-wrap;}
+  .copy-btn{position:absolute;top:10px;right:10px;background:#1976d2;color:#fff;padding:6px 12px;font-size:13px;border-radius:4px;}
+  .copy-btn:hover{background:#1565c0;}
+  .preview-container{margin-top:30px;padding:20px;background:#f9f9fb;border-radius:10px;border:1px solid #e0e0e0;}
+  .preview-container h3{margin-top:0;color:#1976d2;}
+  .ad-preview{background:#fff;padding:30px;border-radius:15px;box-shadow:0 4px 20px rgba(0,0,0,0.1);max-width:100%;text-align:center;}
+  .note{font-size:13px;color:#666;margin-top:20px;line-height:1.5;}
+  .note a{color:#1976d2;}
+  .placeholder{background:#eee;height:200px;display:flex;align-items:center;justify-content:center;color:#999;font-style:italic;}
 </style>
 </head>
 <body>
 
 <div class="container">
   <h1>Amazon → Interstitial Ad Generator</h1>
-  <p class="subtitle">Paste product link + image → get beautiful HTML for YOURLS</p>
+  <p class="subtitle"><strong>Live Preview</strong> – never stuck on “Fetching image…”</p>
 
   <label for="url">Amazon Product URL:</label>
   <input type="url" id="url" placeholder="https://www.amazon.com/dp/B0FFPZRPX9">
@@ -47,73 +49,57 @@
   <label for="original">Original Price (optional):</label>
   <input type="text" id="original" placeholder="e.g. $299.99">
 
-  <button onclick="generateAd()">Generate Ad Code</button>
+  <button onclick="generateAd()">Generate Ad + Preview</button>
 
   <div id="output" class="output" style="display:none;">
-    <button class="copy-btn" onclick="copyCode()">Copy</button>
-    <strong>HTML Code (paste into YOURLS):</strong><br><br>
+    <button class="copy-btn" onclick="copyCode()">Copy HTML</button>
+    <strong>Generated HTML (paste into YOURLS):</strong><br><br>
     <code id="code"></code>
   </div>
 
-  <div id="preview" class="preview" style="display:none;"></div>
+  <div id="preview-container" class="preview-container" style="display:none;">
+    <h3>Live Preview</h3>
+    <div id="ad-preview" class="ad-preview"></div>
+  </div>
 
   <p class="note">
     <strong>Tips:</strong><br>
-    • Use a direct image link (ends in <code>.jpg</code>, <code>.png</code>)<br>
-    • Amazon images: right-click product image → "Copy image address"<br>
-    • Add <code>&ref=yourls</code> to track clicks in Amazon Associates<br>
-    • Leave image blank to auto-fetch from Amazon
+    • Right-click the product image → “Copy image address”<br>
+    • Leave image blank → we try to pull it automatically (fallback = placeholder)<br>
+    • <code>&ref=yourls</code> is added for Amazon tracking
   </p>
 </div>
 
 <script>
 async function generateAd() {
-  const url = document.getElementById('url').value.trim();
-  const customImg = document.getElementById('image').value.trim();
-  const tag = document.getElementById('tag').value.trim();
-  const title = document.getElementById('title').value.trim() || 'Limited Time Deal!';
-  const price = document.getElementById('price').value.trim();
+  const url      = document.getElementById('url').value.trim();
+  const customImg= document.getElementById('image').value.trim();
+  const tag      = document.getElementById('tag').value.trim();
+  const title    = document.getElementById('title').value.trim() || 'Limited Time Deal!';
+  const price    = document.getElementById('price').value.trim();
   const original = document.getElementById('original').value.trim();
 
-  if (!url) {
-    alert('Please enter an Amazon URL');
-    return;
-  }
+  if (!url) { alert('Enter an Amazon URL'); return; }
 
-  // --- Extract ASIN ---
+  // ---- 1. Extract ASIN -------------------------------------------------
   const asinMatch = url.match(/\/dp\/([A-Z0-9]{10})/) || url.match(/\/gp\/product\/([A-Z0-9]{10})/);
-  if (!asinMatch) {
-    alert('Could not find ASIN. Use a standard Amazon product link.');
-    return;
-  }
+  if (!asinMatch) { alert('ASIN not found – use a normal Amazon product link'); return; }
   const asin = asinMatch[1];
 
-  // --- Final URL with tag & ref ---
-  let finalUrl = `https://www.amazon.com/dp/${asin}`;
-  const params = new URLSearchParams();
-  if (tag) params.append('tag', tag);
-  params.append('ref', 'yourls');
-  finalUrl += '?' + params.toString();
+  // ---- 2. Build final affiliate URL ------------------------------------
+  const finalUrl = new URL(`https://www.amazon.com/dp/${asin}`);
+  if (tag) finalUrl.searchParams.set('tag', tag);
+  finalUrl.searchParams.set('ref', 'yourls');
 
-  // --- Image: use custom if provided, else try to fetch ---
+  // ---- 3. Image --------------------------------------------------------
   let imgSrc = customImg || '';
+
+  // If no custom image, try to fetch it (with timeout)
   if (!imgSrc) {
-    try {
-      const proxy = 'https://api.allorigins.win/raw?url=';
-      const resp = await fetch(proxy + encodeURIComponent(`https://www.amazon.com/dp/${asin}`));
-      const html = await resp.text();
-      const imgMatch = html.match(/<img[^>]+id="landingImage"[^>]+data-a-dynamic-image="([^"]+)"/);
-      if (imgMatch) {
-        const json = JSON.parse(imgMatch[1]);
-        const keys = Object.keys(json).sort((a,b) => json[b][0] - json[a][0]); // largest first
-        imgSrc = keys[0];
-      }
-    } catch (e) {
-      imgSrc = `https://m.media-amazon.com/images/I/${asin}.jpg`; // fallback
-    }
+    imgSrc = await fetchAmazonImage(asin);
   }
 
-  // --- Price HTML ---
+  // ---- 4. Price HTML ---------------------------------------------------
   let priceHtml = '';
   if (price || original) {
     priceHtml = `<p style="margin:8px 0;color:#B12704;font-weight:bold;font-size:18px;">`;
@@ -122,25 +108,61 @@ async function generateAd() {
     priceHtml += `</p>`;
   }
 
-  // --- Final Ad HTML ---
+  // ---- 5. Final ad HTML ------------------------------------------------
   const html = `<div style="background:#fff;padding:25px;border-radius:15px;text-align:center;box-shadow:0 4px 15px rgba(0,0,0,0.1);max-width:100%;">
     <img src="${imgSrc}" alt="Product" style="max-width:100%;height:auto;border-radius:10px;margin-bottom:15px;">
     <h3 style="margin:8px 0;font-size:20px;color:#232f3e;">${title}</h3>
     ${priceHtml}
-    <a href="${finalUrl}" target="_blank" 
+    <a href="${finalUrl}" target="_blank"
        style="background:#ff9900;color:#fff;text-decoration:none;padding:12px 28px;border-radius:50px;font-weight:bold;font-size:17px;display:inline-block;">
        View Deal on Amazon
     </a>
     <p style="margin-top:12px;font-size:11px;color:#666;">
         Affiliate link • As an Amazon Associate we earn from qualifying purchases
     </p>
-</div>`.replace(/^\s+|\s+$/gm, '').replace(/\n/g, '');
+  </div>`.replace(/^\s+|\s+$/gm, '').replace(/\n/g, '');
 
-  // --- Show output ---
+  // ---- 6. Show HTML ----------------------------------------------------
   document.getElementById('code').textContent = html;
   document.getElementById('output').style.display = 'block';
-  document.getElementById('preview').innerHTML = html;
-  document.getElementById('preview').style.display = 'block';
+
+  // ---- 7. Live preview (with placeholder while image loads) ----------
+  const preview = document.getElementById('ad-preview');
+  const placeholder = `<div class="placeholder">Loading image…</div>`;
+  preview.innerHTML = html.replace(/<img[^>]+>/, placeholder);
+  document.getElementById('preview-container').style.display = 'block';
+
+  // Swap placeholder → real image when it loads (or keep placeholder)
+  const img = new Image();
+  img.onload = () => preview.innerHTML = html;
+  img.onerror = () => preview.innerHTML = html.replace(/src="[^"]+"/, 'src="https://via.placeholder.com/600x400?text=No+Image"');
+  img.src = imgSrc;
+}
+
+// ---------------------------------------------------------------------
+// Try to pull the biggest product image from Amazon (3-second timeout)
+// ---------------------------------------------------------------------
+async function fetchAmazonImage(asin) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 3000);
+
+  try {
+    const proxy = 'https://api.allorigins.win/raw?url=';
+    const resp = await fetch(proxy + encodeURIComponent(`https://www.amazon.com/dp/${asin}`), {signal: controller.signal});
+    const html = await resp.text();
+    clearTimeout(timeout);
+
+    const m = html.match(/<img[^>]+id="landingImage"[^>]+data-a-dynamic-image="([^"]+)"/);
+    if (m) {
+      const json = JSON.parse(m[1]);
+      const keys = Object.keys(json).sort((a,b) => json[b][0] - json[a][0]); // largest first
+      return keys[0];
+    }
+  } catch (e) {
+    // ignore – will fall back to placeholder
+  }
+  clearTimeout(timeout);
+  return `https://via.placeholder.com/600x400?text=Image+Not+Found`;
 }
 
 function copyCode() {
